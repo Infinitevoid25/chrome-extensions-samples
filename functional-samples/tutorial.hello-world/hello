@@ -1,0 +1,69 @@
+"manifest_version": 3,
+  "name": "Hello Extensions",
+  "description": "Base Level Extension",
+  "version": "1.0",
+"action": {
+// ==UserScript==
+// @name        Always Open New Tab
+// @namespace   Violentmonkey Scripts
+// @match       *://*/*
+// @grant       none
+// @version     1.0
+// @author      -
+// @description 11/30/2024, 12:18:00 PM
+// ==/UserScript==
+
+'use strict';
+
+// Store the original window.open function
+const originalWindowOpen = window.open;
+
+// Override the window.open function
+window.open = function (url, target, features) {
+    // Ensure the target is always '_blank' to open in a new tab
+    if (url.startsWith('http')) {
+        target = '_blank';
+    }
+
+    // Call the original window.open function with the modified target
+    return originalWindowOpen.call(window, url, target, features);
+};
+
+function rewriteLink(link) {
+    if (link.href && link.href.startsWith('http') && link.target !== '_blank') {
+        link.target = '_blank';
+    }
+}
+
+function makeLinksOpenInNewTabs() {
+    // Select all <a> elements on the page
+    const links = document.querySelectorAll('a[href]');
+    links.forEach(link => rewriteLink(link));
+}
+
+// Run the function to modify links on initial page load
+makeLinksOpenInNewTabs();
+
+// Use a MutationObserver to watch for dynamically added links
+const observer = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+        if (mutation.addedNodes) {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    const addedLinks = node.querySelectorAll && node.querySelectorAll('a[href]');
+                    addedLinks.forEach(link => rewriteLink(link));
+                    if (node.nodeName === 'A') {
+                        rewriteLink(node);
+                    }
+                }
+            });
+        }
+    });
+});
+
+// Start observing the document for changes to child nodes
+observer.observe(document.body, { childList: true, subtree: true });
+"default_popup": "hello.html",
+    "default_icon": "hello_extensions.png"
+  }
+}
